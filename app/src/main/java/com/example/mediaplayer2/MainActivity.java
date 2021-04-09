@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
     private RecyclerView.ViewHolder viewHolder;
     private Button bt_save;
     private VideoView mVideoView;
-    private String TAG="TAG";
+    private String TAG = "TAG";
     private TextView tx_time;
 
     @Override
@@ -52,20 +52,17 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         setContentView(R.layout.activity_main);
 
         //imageVideo 影片截圖
-        ImageView thumbnail1= (ImageView) findViewById(R.id.imageVideo);
-        Glide.with(this)
-                .load(R.raw.yonikakerumv)
-                .thumbnail(0.1f)
-                .into(thumbnail1);
-
+        ImageView thumbnail1 = (ImageView) findViewById(R.id.imageVideo);
+//        Glide.with(this)
+//                .load(R.raw.yonikakerumv)
+//                .thumbnail(0.1f)
+//                .into(thumbnail1);
 
         //imageInternet 網路圖像載入
         ImageView imageView = findViewById(R.id.imageInternet);
-        Glide.with(this)
-                .load("https://goo.gl/gEgYUd")
-                .into(imageView);
-
-
+//        Glide.with(this)
+//                .load("https://goo.gl/gEgYUd")
+//                .into(imageView);
 
         //TODO 3 播放器
         //加入元件id
@@ -76,10 +73,18 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         //設定 mVideoView callback
         mVideoView.setOnCompletionListener(this);
         mVideoView.setOnErrorListener(this);
+        mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mp) {
+                mVideoView.start();
+            }
+        });
         //設定 mVideoView 要播的檔案
-        Uri uri = Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.yonikakerumv);
-        mVideoView.setVideoURI(uri);
-
+//        Uri uri = Uri.parse("/sdcard/Movies/BDC789456s.mp4");
+//        mVideoView.setVideoURI(uri);
+        String sourcePath = "/sdcard/Movies/Billie Eilish - when the partys over.mp4";
+        mVideoView.setVideoPath(sourcePath);
+        mVideoView.setPressed(true);
         //測試 mediaController
         Log.d(TAG, "onCreate: " + mediaController.isShowing());
         mediaController.show();
@@ -92,36 +97,63 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
             public void onClick(View v) {
                 String res;
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
-                Date date = new Date(mVideoView.getCurrentPosition() );
+                Date date = new Date(mVideoView.getCurrentPosition());
                 res = simpleDateFormat.format(date);
                 tx_time.setText(res);
             }
         });
 
         //TODO button 儲存畫面截圖
-//        bt_save = findViewById(R.id.bt_save);
-//        bt_save.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
+        bt_save = findViewById(R.id.bt_save);
+        bt_save.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
 //                View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
 //                Bitmap bitmap = getScreenShot(rootView);
 //                store(bitmap,"ScreenShot.png");
-//            }
-//        });
+                thumbnail1.setImageBitmap(getVideoFrame(MainActivity.this, sourcePath));
+            }
+        });
 
 
         //TODO 擷取影音某個秒數的截圖
-       // getVideoThumnail("R.raw.yonikakerumv",1000*1000);//這是視訊截圖
-        loadVideoScreenshot(this,"R.raw.yonikakerumv",thumbnail1,0);
-
+        // getVideoThumnail("R.raw.yonikakerumv",1000*1000);//這是視訊截圖
+//        loadVideoScreenshot(this, "R.raw.yonikakerumv", thumbnail1, 0);
 
 
         //ask for permission
-        if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)!=
-                PackageManager.PERMISSION_GRANTED){
-        }else {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+        } else {
             //do nothing at the moment
         }
+    }
+
+    private Bitmap getVideoFrame(Context context, String path) {
+        Bitmap bmp = null;
+        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        try {
+//            retriever.setDataSource(context, uri);
+            retriever.setDataSource(path);
+            String timeString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            long titalTime = Long.parseLong(timeString) * 1000;
+            int duration = mVideoView.getDuration();
+            long videoPosition = titalTime * mVideoView.getCurrentPosition() / duration;
+            if (videoPosition > 0) {
+                bmp = retriever.getFrameAtTime(videoPosition, MediaMetadataRetriever.OPTION_CLOSEST);
+            }
+        } catch (IllegalArgumentException ex) {
+            ex.printStackTrace();
+        } catch (RuntimeException ex) {
+            ex.printStackTrace();
+        } finally {
+            try {
+                retriever.release();
+            } catch (RuntimeException e) {
+                e.fillInStackTrace();
+            }
+        }
+        return bmp;
     }
 
     //ask for storage permission
@@ -202,8 +234,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
      * 獲得視訊某一幀的縮圖
      *
      * @param videoPath 視訊地址
-     * @param timeUs 微秒，注意這裡是微秒 1秒 = 1 * 1000 * 1000 微秒
-     *
+     * @param timeUs    微秒，注意這裡是微秒 1秒 = 1 * 1000 * 1000 微秒
      * @return 擷取的圖片
      */
     public static Bitmap getVideoThumnail(String videoPath, long timeUs) {
@@ -217,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         return media.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_NEXT_SYNC);
 
         // 得到視訊第一幀的縮圖
-         //return media.getFrameAtTime();
+        //return media.getFrameAtTime();
     }
 
     /**
@@ -226,13 +257,12 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
 
     @Override
     protected void onResume() {
-        mVideoView.start();
+//        mVideoView.start();
         super.onResume();
     }
 
     @Override
     protected void onPause() {
-
         super.onPause();
     }
 
