@@ -1,0 +1,306 @@
+<html>
+<head>
+<title>MainActivity.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #cc7832;}
+.s1 { color: #a9b7c6;}
+.s2 { color: #6a8759;}
+.s3 { color: #808080;}
+.s4 { color: #6897bb;}
+.s5 { color: #629755; font-style: italic;}
+.s6 { color: #629755; font-weight: bold; font-style: italic;}
+</style>
+</head>
+<body bgcolor="#2b2b2b">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#606060" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+MainActivity.java</font>
+</center></td></tr></table>
+<pre><span class="s0">package </span><span class="s1">com.example.mediaplayer2</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">androidx.annotation.NonNull</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">androidx.appcompat.app.AppCompatActivity</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">androidx.recyclerview.widget.RecyclerView</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">android.Manifest</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.content.Context</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.content.pm.PackageManager</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.graphics.Bitmap</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.media.MediaMetadataRetriever</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.media.MediaPlayer</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.net.Uri</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.os.Build</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.os.Bundle</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.os.Environment</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.util.Log</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.view.View</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.Button</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.ImageView</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.MediaController</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.TextView</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.Toast</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">android.widget.VideoView</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">com.bumptech.glide.Glide</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">com.bumptech.glide.load.resource.bitmap.BitmapTransformation</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">com.bumptech.glide.request.RequestOptions</span><span class="s0">;</span>
+
+<span class="s0">import </span><span class="s1">java.io.File</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.io.FileOutputStream</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.security.MessageDigest</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.text.DateFormat</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.text.SimpleDateFormat</span><span class="s0">;</span>
+<span class="s0">import </span><span class="s1">java.util.Date</span><span class="s0">;</span>
+
+<span class="s0">import static </span><span class="s1">com.bumptech.glide.load.resource.bitmap.VideoDecoder.FRAME_OPTION</span><span class="s0">;</span>
+
+
+<span class="s0">public class </span><span class="s1">MainActivity </span><span class="s0">extends </span><span class="s1">AppCompatActivity </span><span class="s0">implements </span><span class="s1">MediaPlayer.OnCompletionListener</span><span class="s0">, </span><span class="s1">MediaPlayer.OnErrorListener {</span>
+
+    <span class="s0">private </span><span class="s1">RecyclerView.ViewHolder viewHolder</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">Button bt_save</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">VideoView mVideoView</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">String TAG = </span><span class="s2">&quot;TAG&quot;</span><span class="s0">;</span>
+    <span class="s0">private </span><span class="s1">TextView tx_time</span><span class="s0">;</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">onCreate(Bundle savedInstanceState) {</span>
+        <span class="s0">super</span><span class="s1">.onCreate(savedInstanceState)</span><span class="s0">;</span>
+        <span class="s1">setContentView(R.layout.activity_main)</span><span class="s0">;</span>
+
+        <span class="s3">//imageVideo 影片截圖</span>
+        <span class="s1">ImageView thumbnail1 = (ImageView) findViewById(R.id.imageVideo)</span><span class="s0">;</span>
+<span class="s3">//        Glide.with(this)</span>
+<span class="s3">//                .load(R.raw.yonikakerumv)</span>
+<span class="s3">//                .thumbnail(0.1f)</span>
+<span class="s3">//                .into(thumbnail1);</span>
+
+        <span class="s3">//imageInternet 網路圖像載入</span>
+        <span class="s1">ImageView imageView = findViewById(R.id.imageInternet)</span><span class="s0">;</span>
+<span class="s3">//        Glide.with(this)</span>
+<span class="s3">//                .load(&quot;https://goo.gl/gEgYUd&quot;)</span>
+<span class="s3">//                .into(imageView);</span>
+
+        <span class="s3">//TODO 3 播放器</span>
+        <span class="s3">//加入元件id</span>
+        <span class="s1">mVideoView = findViewById(R.id.videoView)</span><span class="s0">;</span>
+        <span class="s3">//給 mVideoView 一個控制器</span>
+        <span class="s1">MediaController mediaController = </span><span class="s0">new </span><span class="s1">MediaController(</span><span class="s0">this</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">mVideoView.setMediaController(mediaController)</span><span class="s0">;</span>
+        <span class="s3">//設定 mVideoView callback</span>
+        <span class="s1">mVideoView.setOnCompletionListener(</span><span class="s0">this</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">mVideoView.setOnErrorListener(</span><span class="s0">this</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s1">mVideoView.setOnPreparedListener(</span><span class="s0">new </span><span class="s1">MediaPlayer.OnPreparedListener() {</span>
+            <span class="s1">@Override</span>
+            <span class="s0">public void </span><span class="s1">onPrepared(MediaPlayer mp) {</span>
+                <span class="s1">mVideoView.start()</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s3">//設定 mVideoView 要播的檔案</span>
+<span class="s3">//        Uri uri = Uri.parse(&quot;/sdcard/Movies/BDC789456s.mp4&quot;);</span>
+<span class="s3">//        mVideoView.setVideoURI(uri);</span>
+        <span class="s1">String sourcePath = </span><span class="s2">&quot;/sdcard/Movies/Billie Eilish - when the partys over.mp4&quot;</span><span class="s0">;</span>
+        <span class="s1">mVideoView.setVideoPath(sourcePath)</span><span class="s0">;</span>
+        <span class="s1">mVideoView.setPressed(</span><span class="s0">true</span><span class="s1">)</span><span class="s0">;</span>
+        <span class="s3">//測試 mediaController</span>
+        <span class="s1">Log.d(TAG</span><span class="s0">, </span><span class="s2">&quot;onCreate: &quot; </span><span class="s1">+ mediaController.isShowing())</span><span class="s0">;</span>
+        <span class="s1">mediaController.show()</span><span class="s0">;</span>
+        <span class="s3">//TODO 3 END 播放器</span>
+
+        <span class="s3">//TODO 影片時間 要修改simpleDateFormat的起始時間</span>
+        <span class="s1">tx_time = findViewById(R.id.tx_time)</span><span class="s0">;</span>
+        <span class="s1">tx_time.setOnClickListener(</span><span class="s0">new </span><span class="s1">View.OnClickListener() {</span>
+            <span class="s1">@Override</span>
+            <span class="s0">public void </span><span class="s1">onClick(View v) {</span>
+                <span class="s1">String res</span><span class="s0">;</span>
+                <span class="s1">SimpleDateFormat simpleDateFormat = </span><span class="s0">new </span><span class="s1">SimpleDateFormat(</span><span class="s2">&quot;mm:ss&quot;</span><span class="s1">)</span><span class="s0">;</span>
+                <span class="s1">Date date = </span><span class="s0">new </span><span class="s1">Date(mVideoView.getCurrentPosition())</span><span class="s0">;</span>
+                <span class="s1">res = simpleDateFormat.format(date)</span><span class="s0">;</span>
+                <span class="s1">tx_time.setText(res)</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+
+        <span class="s3">//TODO button 儲存畫面截圖</span>
+        <span class="s1">bt_save = findViewById(R.id.bt_save)</span><span class="s0">;</span>
+        <span class="s1">bt_save.setOnClickListener(</span><span class="s0">new </span><span class="s1">View.OnClickListener() {</span>
+            <span class="s1">@Override</span>
+            <span class="s0">public void </span><span class="s1">onClick(View v) {</span>
+<span class="s3">//                View rootView = getWindow().getDecorView().findViewById(android.R.id.content);</span>
+<span class="s3">//                Bitmap bitmap = getScreenShot(rootView);</span>
+<span class="s3">//                store(bitmap,&quot;ScreenShot.png&quot;);</span>
+                <span class="s1">thumbnail1.setImageBitmap(getVideoFrame(MainActivity.</span><span class="s0">this, </span><span class="s1">sourcePath))</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+
+
+        <span class="s3">//TODO 擷取影音某個秒數的截圖</span>
+        <span class="s3">// getVideoThumnail(&quot;R.raw.yonikakerumv&quot;,1000*1000);//這是視訊截圖</span>
+<span class="s3">//        loadVideoScreenshot(this, &quot;R.raw.yonikakerumv&quot;, thumbnail1, 0);</span>
+
+
+        <span class="s3">//ask for permission</span>
+        <span class="s0">if </span><span class="s1">(Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.M &amp;&amp; checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=</span>
+                <span class="s1">PackageManager.PERMISSION_GRANTED) {</span>
+        <span class="s1">} </span><span class="s0">else </span><span class="s1">{</span>
+            <span class="s3">//do nothing at the moment</span>
+        <span class="s1">}</span>
+    <span class="s1">}</span>
+
+    <span class="s0">private </span><span class="s1">Bitmap getVideoFrame(Context context</span><span class="s0">, </span><span class="s1">String path) {</span>
+        <span class="s1">Bitmap bmp = </span><span class="s0">null;</span>
+        <span class="s1">MediaMetadataRetriever retriever = </span><span class="s0">new </span><span class="s1">MediaMetadataRetriever()</span><span class="s0">;</span>
+        <span class="s0">try </span><span class="s1">{</span>
+<span class="s3">//            retriever.setDataSource(context, uri);</span>
+            <span class="s1">retriever.setDataSource(path)</span><span class="s0">;</span>
+            <span class="s1">String timeString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)</span><span class="s0">;</span>
+            <span class="s0">long </span><span class="s1">titalTime = Long.parseLong(timeString) * </span><span class="s4">1000</span><span class="s0">;</span>
+            <span class="s0">int </span><span class="s1">duration = mVideoView.getDuration()</span><span class="s0">;</span>
+            <span class="s0">long </span><span class="s1">videoPosition = titalTime * mVideoView.getCurrentPosition() / duration</span><span class="s0">;</span>
+            <span class="s0">if </span><span class="s1">(videoPosition &gt; </span><span class="s4">0</span><span class="s1">) {</span>
+                <span class="s1">bmp = retriever.getFrameAtTime(videoPosition</span><span class="s0">, </span><span class="s1">MediaMetadataRetriever.OPTION_CLOSEST)</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">} </span><span class="s0">catch </span><span class="s1">(IllegalArgumentException ex) {</span>
+            <span class="s1">ex.printStackTrace()</span><span class="s0">;</span>
+        <span class="s1">} </span><span class="s0">catch </span><span class="s1">(RuntimeException ex) {</span>
+            <span class="s1">ex.printStackTrace()</span><span class="s0">;</span>
+        <span class="s1">} </span><span class="s0">finally </span><span class="s1">{</span>
+            <span class="s0">try </span><span class="s1">{</span>
+                <span class="s1">retriever.release()</span><span class="s0">;</span>
+            <span class="s1">} </span><span class="s0">catch </span><span class="s1">(RuntimeException e) {</span>
+                <span class="s1">e.fillInStackTrace()</span><span class="s0">;</span>
+            <span class="s1">}</span>
+        <span class="s1">}</span>
+        <span class="s0">return </span><span class="s1">bmp</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s3">//ask for storage permission</span>
+
+    <span class="s3">//get screen shot of the app</span>
+<span class="s3">//    public static Bitmap getScreenShot (View view){</span>
+<span class="s3">//        View screenView = view.getRootView();</span>
+<span class="s3">//        screenView.setDrawingCacheEnabled(true);</span>
+<span class="s3">//        Bitmap bitmap = Bitmap.createBitmap(screenView.getDrawingCache());</span>
+<span class="s3">//        screenView.setDrawingCacheEnabled(false);</span>
+<span class="s3">//        return bitmap;</span>
+<span class="s3">//    }</span>
+<span class="s3">//</span>
+<span class="s3">//    //store the image on the device</span>
+<span class="s3">//    public void store(Bitmap bitmap, String fileName){</span>
+<span class="s3">//        String dirPath = Environment.getDownloadCacheDirectory().getAbsolutePath()+&quot;/MyFiles&quot;;</span>
+<span class="s3">//        File dir = new File(dirPath);</span>
+<span class="s3">//        if(!dir.exists()){</span>
+<span class="s3">//            dir.mkdirs();</span>
+<span class="s3">//        }</span>
+<span class="s3">//        File file = new File(dirPath,fileName);</span>
+<span class="s3">//</span>
+<span class="s3">//        try {</span>
+<span class="s3">//            FileOutputStream fileOutputStream = new FileOutputStream(file);</span>
+<span class="s3">//            bitmap.compress(Bitmap.CompressFormat.PNG,100,fileOutputStream);</span>
+<span class="s3">//            fileOutputStream.flush();</span>
+<span class="s3">//            fileOutputStream.close();</span>
+<span class="s3">//        } catch (Exception e) {</span>
+<span class="s3">//            e.printStackTrace();</span>
+<span class="s3">//            Toast.makeText(this, &quot;Error!&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="s3">//        }</span>
+<span class="s3">//    }</span>
+<span class="s3">//</span>
+<span class="s3">//    public void onRequestPermissionoResult(int requestCode ,String[] permission,int[] grantResult){</span>
+<span class="s3">//        if(requestCode==1000){</span>
+<span class="s3">//            if(grantResult[0] == RESULT_OK){</span>
+<span class="s3">//                Toast.makeText(this, &quot;Permission granted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="s3">//            }else {</span>
+<span class="s3">//                Toast.makeText(this, &quot;Permission not granted&quot;, Toast.LENGTH_SHORT).show();</span>
+<span class="s3">//            }</span>
+<span class="s3">//        }</span>
+<span class="s3">//    }</span>
+
+    <span class="s5">/**</span>
+     <span class="s5">* 顯示視訊 第三秒 那一幀</span>
+     <span class="s5">*</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">context</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">uri</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">imageView</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">frameTimeMicros 要擷取得時間。單位：微秒</span>
+     <span class="s5">*/</span>
+    <span class="s0">public static void </span><span class="s1">loadVideoScreenshot(</span><span class="s0">final </span><span class="s1">Context context</span><span class="s0">, </span><span class="s1">String uri</span><span class="s0">, </span><span class="s1">ImageView imageView</span><span class="s0">, long </span><span class="s1">frameTimeMicros) {</span>
+
+        <span class="s3">// 這裡的時間是以微秒為單位</span>
+        <span class="s1">RequestOptions requestOptions = RequestOptions.frameOf(frameTimeMicros)</span><span class="s0">;</span>
+        <span class="s1">requestOptions.set(FRAME_OPTION</span><span class="s0">, </span><span class="s1">MediaMetadataRetriever.OPTION_CLOSEST)</span><span class="s0">;</span>
+        <span class="s1">requestOptions.transform(</span><span class="s0">new </span><span class="s1">BitmapTransformation() {</span>
+            <span class="s1">@Override</span>
+            <span class="s0">protected </span><span class="s1">Bitmap transform(@NonNull BitmapPool pool</span><span class="s0">, </span><span class="s1">@NonNull Bitmap toTransform</span><span class="s0">, int </span><span class="s1">outWidth</span><span class="s0">, int </span><span class="s1">outHeight) {</span>
+                <span class="s0">return </span><span class="s1">toTransform</span><span class="s0">;</span>
+            <span class="s1">}</span>
+
+            <span class="s1">@Override</span>
+            <span class="s0">public void </span><span class="s1">updateDiskCacheKey(MessageDigest messageDigest) {</span>
+                <span class="s0">try </span><span class="s1">{</span>
+                    <span class="s1">messageDigest.update((</span><span class="s2">&quot;com.example.mediaplayer2&quot; </span><span class="s1">+ </span><span class="s2">&quot;RotateTransform&quot;</span><span class="s1">).getBytes(</span><span class="s2">&quot;utf-8&quot;</span><span class="s1">))</span><span class="s0">;</span>
+
+                <span class="s1">} </span><span class="s0">catch </span><span class="s1">(Exception e) {</span>
+                    <span class="s1">e.printStackTrace()</span><span class="s0">;</span>
+                <span class="s1">}</span>
+
+            <span class="s1">}</span>
+        <span class="s1">})</span><span class="s0">;</span>
+        <span class="s1">Glide.with(context).load(uri).apply(requestOptions).into(imageView)</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s5">/**</span>
+     <span class="s5">* 獲得視訊某一幀的縮圖</span>
+     <span class="s5">*</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">videoPath 視訊地址</span>
+     <span class="s5">* </span><span class="s6">@param </span><span class="s5">timeUs    微秒，注意這裡是微秒 1秒 = 1 * 1000 * 1000 微秒</span>
+     <span class="s5">* </span><span class="s6">@return </span><span class="s5">擷取的圖片</span>
+     <span class="s5">*/</span>
+    <span class="s0">public static </span><span class="s1">Bitmap getVideoThumnail(String videoPath</span><span class="s0">, long </span><span class="s1">timeUs) {</span>
+        <span class="s1">MediaMetadataRetriever media = </span><span class="s0">new </span><span class="s1">MediaMetadataRetriever()</span><span class="s0">;</span>
+        <span class="s1">media.setDataSource(videoPath)</span><span class="s0">;</span>
+        <span class="s3">// 獲取第一個關鍵幀</span>
+        <span class="s3">// OPTION_CLOSEST 在給定的時間，檢索最近一個幀，這個幀不一定是關鍵幀。</span>
+        <span class="s3">// OPTION_CLOSEST_SYNC 在給定的時間，檢索最近一個關鍵幀。</span>
+        <span class="s3">// OPTION_NEXT_SYNC 在給定時間之後，檢索一個關鍵幀。</span>
+        <span class="s3">// OPTION_PREVIOUS_SYNC 在給定時間之前，檢索一個關鍵幀。</span>
+        <span class="s0">return </span><span class="s1">media.getFrameAtTime(timeUs</span><span class="s0">, </span><span class="s1">MediaMetadataRetriever.OPTION_NEXT_SYNC)</span><span class="s0">;</span>
+
+        <span class="s3">// 得到視訊第一幀的縮圖</span>
+        <span class="s3">//return media.getFrameAtTime();</span>
+    <span class="s1">}</span>
+
+    <span class="s5">/**</span>
+     <span class="s5">* 以下是播放器 callback</span>
+     <span class="s5">*/</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">onResume() {</span>
+<span class="s3">//        mVideoView.start();</span>
+        <span class="s0">super</span><span class="s1">.onResume()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">protected void </span><span class="s1">onPause() {</span>
+        <span class="s0">super</span><span class="s1">.onPause()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public void </span><span class="s1">onCompletion(MediaPlayer mp) {</span>
+        <span class="s1">Toast.makeText(</span><span class="s0">this, </span><span class="s2">&quot;播放完畢&quot;</span><span class="s0">, </span><span class="s1">Toast.LENGTH_SHORT).show()</span><span class="s0">;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public boolean </span><span class="s1">onError(MediaPlayer mp</span><span class="s0">, int </span><span class="s1">what</span><span class="s0">, int </span><span class="s1">extra) {</span>
+        <span class="s1">Toast.makeText(</span><span class="s0">this, </span><span class="s2">&quot;發生錯誤&quot;</span><span class="s0">, </span><span class="s1">Toast.LENGTH_SHORT).show()</span><span class="s0">;</span>
+        <span class="s0">return false;</span>
+    <span class="s1">}</span>
+
+    <span class="s1">@Override</span>
+    <span class="s0">public void </span><span class="s1">onPointerCaptureChanged(</span><span class="s0">boolean </span><span class="s1">hasCapture) {</span>
+
+    <span class="s1">}</span>
+<span class="s1">}</span></pre>
+</body>
+</html>
