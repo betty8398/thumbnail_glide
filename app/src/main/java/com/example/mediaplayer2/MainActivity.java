@@ -35,6 +35,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import wseemann.media.FFmpegMediaMetadataRetriever;
+
 import static com.bumptech.glide.load.resource.bitmap.VideoDecoder.FRAME_OPTION;
 
 
@@ -82,7 +84,7 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         //設定 mVideoView 要播的檔案
 //        Uri uri = Uri.parse("/sdcard/Movies/BDC789456s.mp4");
 //        mVideoView.setVideoURI(uri);
-        String sourcePath = "/sdcard/Movies/Billie Eilish - when the partys over.mp4";
+        String sourcePath = "/sdcard/Movies/screen-20210407-161618.mp4";
         mVideoView.setVideoPath(sourcePath);
         mVideoView.setPressed(true);
         //測試 mediaController
@@ -131,11 +133,11 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
 
     private Bitmap getVideoFrame(Context context, String path) {
         Bitmap bmp = null;
-        MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+        FFmpegMediaMetadataRetriever retriever = new FFmpegMediaMetadataRetriever();
         try {
 //            retriever.setDataSource(context, uri);
             retriever.setDataSource(path);
-            String timeString = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+            String timeString = retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION);
             long titalTime = Long.parseLong(timeString) * 1000;
             int duration = mVideoView.getDuration();
             long videoPosition = titalTime * mVideoView.getCurrentPosition() / duration;
