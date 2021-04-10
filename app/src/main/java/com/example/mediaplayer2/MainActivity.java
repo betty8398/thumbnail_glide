@@ -10,10 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
-import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -28,14 +26,9 @@ import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool;
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation;
 import com.bumptech.glide.request.RequestOptions;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.security.MessageDigest;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-
-import wseemann.media.FFmpegMediaMetadataRetriever;
 
 import static com.bumptech.glide.load.resource.bitmap.VideoDecoder.FRAME_OPTION;
 
@@ -47,11 +40,19 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
     private VideoView mVideoView;
     private String TAG = "TAG";
     private TextView tx_time;
+    private View Anchor;
+    private int position=0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        //imageInternet 網路圖像載入
+        ImageView imageView = findViewById(R.id.imageInternet);
+//        Glide.with(this)
+//                .load("https://goo.gl/gEgYUd")
+//                .into(imageView);
 
         //imageVideo 影片截圖
         ImageView thumbnail1 = (ImageView) findViewById(R.id.imageVideo);
@@ -60,36 +61,44 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
 //                .thumbnail(0.1f)
 //                .into(thumbnail1);
 
-        //imageInternet 網路圖像載入
-        ImageView imageView = findViewById(R.id.imageInternet);
-//        Glide.with(this)
-//                .load("https://goo.gl/gEgYUd")
-//                .into(imageView);
 
         //TODO 3 播放器
         //加入元件id
         mVideoView = findViewById(R.id.videoView);
+
         //給 mVideoView 一個控制器
         MediaController mediaController = new MediaController(this);
+
+
         mVideoView.setMediaController(mediaController);
+
+
         //設定 mVideoView callback
         mVideoView.setOnCompletionListener(this);
         mVideoView.setOnErrorListener(this);
         mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
             @Override
             public void onPrepared(MediaPlayer mp) {
-                mVideoView.start();
+                mediaController.setAnchorView(mVideoView);
+                mediaController.show();
+                mVideoView.seekTo(position);
+                if (position == 0) {
+                    mp.start();
+                } else {
+                    mp.pause();
+                }
             }
         });
+
         //設定 mVideoView 要播的檔案
 //        Uri uri = Uri.parse("/sdcard/Movies/BDC789456s.mp4");
 //        mVideoView.setVideoURI(uri);
         String sourcePath = "/sdcard/Movies/screen-20210407-161618.mp4";
         mVideoView.setVideoPath(sourcePath);
-        mVideoView.setPressed(true);
-        //測試 mediaController
-        Log.d(TAG, "onCreate: " + mediaController.isShowing());
-        mediaController.show();
+        //設定是否按下按鈕
+        //mVideoView.setPressed(true);
+
+        //mediaController.show();
         //TODO 3 END 播放器
 
         //TODO 影片時間 要修改simpleDateFormat的起始時間
@@ -105,22 +114,17 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
             }
         });
 
-        //TODO button 儲存畫面截圖
+        //TODO button_save 儲存影片截圖
         bt_save = findViewById(R.id.bt_save);
         bt_save.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
-//                Bitmap bitmap = getScreenShot(rootView);
-//                store(bitmap,"ScreenShot.png");
-                thumbnail1.setImageBitmap(getVideoFrame(MainActivity.this, sourcePath));
+                //暫停播放
+                mVideoView.pause();
+                GetVideoFrame getVideoFrame= new GetVideoFrame(MainActivity.this, sourcePath,mVideoView);
+                thumbnail1.setImageBitmap(getVideoFrame.getVideoFrame());
             }
         });
-
-
-        //TODO 擷取影音某個秒數的截圖
-        // getVideoThumnail("R.raw.yonikakerumv",1000*1000);//這是視訊截圖
-//        loadVideoScreenshot(this, "R.raw.yonikakerumv", thumbnail1, 0);
 
 
         //ask for permission
@@ -131,127 +135,18 @@ public class MainActivity extends AppCompatActivity implements MediaPlayer.OnCom
         }
     }
 
-    private Bitmap getVideoFrame(Context context, String path) {
-        Bitmap bmp = null;
-        FFmpegMediaMetadataRetriever retriever = new FFmpegMediaMetadataRetriever();
-        try {
-//            retriever.setDataSource(context, uri);
-            retriever.setDataSource(path);
-            String timeString = retriever.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION);
-            long titalTime = Long.parseLong(timeString) * 1000;
-            int duration = mVideoView.getDuration();
-            long videoPosition = titalTime * mVideoView.getCurrentPosition() / duration;
-            if (videoPosition > 0) {
-                bmp = retriever.getFrameAtTime(videoPosition, MediaMetadataRetriever.OPTION_CLOSEST);
-            }
-        } catch (IllegalArgumentException ex) {
-            ex.printStackTrace();
-        } catch (RuntimeException ex) {
-            ex.printStackTrace();
-        } finally {
-            try {
-                retriever.release();
-            } catch (RuntimeException e) {
-                e.fillInStackTrace();
+    //ask for storage permission
+    public void onRequestPermissionoResult(int requestCode ,String[] permission,int[] grantResult){
+        if(requestCode==1000){
+            if(grantResult[0] == RESULT_OK){
+                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
+            }else {
+                Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
             }
         }
-        return bmp;
     }
 
-    //ask for storage permission
 
-    //get screen shot of the app
-//    public static Bitmap getScreenShot (View view){
-//        View screenView = view.getRootView();
-//        screenView.setDrawingCacheEnabled(true);
-//        Bitmap bitmap = Bitmap.createBitmap(screenView.getDrawingCache());
-//        screenView.setDrawingCacheEnabled(false);
-//        return bitmap;
-//    }
-//
-//    //store the image on the device
-//    public void store(Bitmap bitmap, String fileName){
-//        String dirPath = Environment.getDownloadCacheDirectory().getAbsolutePath()+"/MyFiles";
-//        File dir = new File(dirPath);
-//        if(!dir.exists()){
-//            dir.mkdirs();
-//        }
-//        File file = new File(dirPath,fileName);
-//
-//        try {
-//            FileOutputStream fileOutputStream = new FileOutputStream(file);
-//            bitmap.compress(Bitmap.CompressFormat.PNG,100,fileOutputStream);
-//            fileOutputStream.flush();
-//            fileOutputStream.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            Toast.makeText(this, "Error!", Toast.LENGTH_SHORT).show();
-//        }
-//    }
-//
-//    public void onRequestPermissionoResult(int requestCode ,String[] permission,int[] grantResult){
-//        if(requestCode==1000){
-//            if(grantResult[0] == RESULT_OK){
-//                Toast.makeText(this, "Permission granted", Toast.LENGTH_SHORT).show();
-//            }else {
-//                Toast.makeText(this, "Permission not granted", Toast.LENGTH_SHORT).show();
-//            }
-//        }
-//    }
-
-    /**
-     * 顯示視訊 第三秒 那一幀
-     *
-     * @param context
-     * @param uri
-     * @param imageView
-     * @param frameTimeMicros 要擷取得時間。單位：微秒
-     */
-    public static void loadVideoScreenshot(final Context context, String uri, ImageView imageView, long frameTimeMicros) {
-
-        // 這裡的時間是以微秒為單位
-        RequestOptions requestOptions = RequestOptions.frameOf(frameTimeMicros);
-        requestOptions.set(FRAME_OPTION, MediaMetadataRetriever.OPTION_CLOSEST);
-        requestOptions.transform(new BitmapTransformation() {
-            @Override
-            protected Bitmap transform(@NonNull BitmapPool pool, @NonNull Bitmap toTransform, int outWidth, int outHeight) {
-                return toTransform;
-            }
-
-            @Override
-            public void updateDiskCacheKey(MessageDigest messageDigest) {
-                try {
-                    messageDigest.update(("com.example.mediaplayer2" + "RotateTransform").getBytes("utf-8"));
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-        Glide.with(context).load(uri).apply(requestOptions).into(imageView);
-    }
-
-    /**
-     * 獲得視訊某一幀的縮圖
-     *
-     * @param videoPath 視訊地址
-     * @param timeUs    微秒，注意這裡是微秒 1秒 = 1 * 1000 * 1000 微秒
-     * @return 擷取的圖片
-     */
-    public static Bitmap getVideoThumnail(String videoPath, long timeUs) {
-        MediaMetadataRetriever media = new MediaMetadataRetriever();
-        media.setDataSource(videoPath);
-        // 獲取第一個關鍵幀
-        // OPTION_CLOSEST 在給定的時間，檢索最近一個幀，這個幀不一定是關鍵幀。
-        // OPTION_CLOSEST_SYNC 在給定的時間，檢索最近一個關鍵幀。
-        // OPTION_NEXT_SYNC 在給定時間之後，檢索一個關鍵幀。
-        // OPTION_PREVIOUS_SYNC 在給定時間之前，檢索一個關鍵幀。
-        return media.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_NEXT_SYNC);
-
-        // 得到視訊第一幀的縮圖
-        //return media.getFrameAtTime();
-    }
 
     /**
      * 以下是播放器 callback
